@@ -4,9 +4,8 @@ import { useCallback, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { Upload, X, CheckCircle, AlertCircle } from 'lucide-react'
+import { Upload, CheckCircle, AlertCircle } from 'lucide-react'
 import { UploadProgress } from '@/lib/types'
-import { formatFileSize } from '@/lib/utils'
 
 interface FileUploaderProps {
   onUpload: (files: File[]) => void
@@ -16,15 +15,15 @@ interface FileUploaderProps {
 
 export function FileUploader({ onUpload, uploads, isUploading }: FileUploaderProps) {
   const [isDragOver, setIsDragOver] = useState(false)
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
-
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     setIsDragOver(false)
     
     const files = Array.from(e.dataTransfer.files)
-    setSelectedFiles(files)
-  }, [])
+    if (files.length > 0) {
+      onUpload(files)
+    }
+  }, [onUpload])
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
@@ -38,21 +37,12 @@ export function FileUploader({ onUpload, uploads, isUploading }: FileUploaderPro
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
-    setSelectedFiles(files)
-  }, [])
-
-  const handleUpload = useCallback(() => {
-    if (selectedFiles.length > 0) {
-      onUpload(selectedFiles)
-      setSelectedFiles([])
+    if (files.length > 0) {
+      onUpload(files)
+      // 清空input，允许重复选择相同文件
+      e.target.value = ''
     }
-  }, [selectedFiles, onUpload])
-
-  const removeFile = useCallback((index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index))
-  }, [])
-
-  const totalSize = selectedFiles.reduce((sum, file) => sum + file.size, 0)
+  }, [onUpload])
 
   return (
     <Card>
@@ -73,7 +63,7 @@ export function FileUploader({ onUpload, uploads, isUploading }: FileUploaderPro
             <div className="space-y-2">
               <p className="text-lg font-medium">拖拽文件到此处或点击选择</p>
               <p className="text-sm text-muted-foreground">
-                支持多文件同时上传
+                选择文件后将自动开始上传
               </p>
             </div>
             <input
@@ -91,50 +81,6 @@ export function FileUploader({ onUpload, uploads, isUploading }: FileUploaderPro
               选择文件
             </Button>
           </div>
-
-          {/* 选中的文件列表 */}
-          {selectedFiles.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium">待上传文件 ({selectedFiles.length})</h4>
-                <p className="text-sm text-muted-foreground">
-                  总大小: {formatFileSize(totalSize)}
-                </p>
-              </div>
-              
-              <div className="space-y-2 max-h-32 overflow-y-auto">
-                {selectedFiles.map((file, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-2 bg-muted rounded-md"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{file.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatFileSize(file.size)}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeFile(index)}
-                      className="ml-2"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-
-              <Button
-                onClick={handleUpload}
-                disabled={isUploading}
-                className="w-full"
-              >
-                {isUploading ? '上传中...' : '开始上传'}
-              </Button>
-            </div>
-          )}
 
           {/* 上传进度 */}
           {uploads.length > 0 && (
