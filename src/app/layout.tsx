@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: '轻量级云盘',
-  description: '基于 Vercel 的轻量级文件共享服务',
+  title: '呈尚策划 关键词描述文件上传下载系统',
+  description: '呈尚策划专用的文件上传下载系统，支持临时文件存储和共享',
 }
 
 export default function RootLayout({

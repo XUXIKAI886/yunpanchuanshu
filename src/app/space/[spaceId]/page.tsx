@@ -36,10 +36,10 @@ export default function SpacePage({ params }: PageProps) {
         {/* 标题区域 */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            文件空间: {spaceId}
+            呈尚策划 关键词描述文件上传下载系统
           </h1>
           <p className="text-muted-foreground">
-            通过此链接可以上传和下载文件
+            通过此链接可以上传和下载文件，文件将在24小时后自动删除
           </p>
         </div>
 
