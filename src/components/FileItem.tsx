@@ -3,16 +3,24 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { FileInfo } from '@/lib/types'
-import { formatFileSize, formatDate, getFileIcon } from '@/lib/utils'
+import { formatFileSize, formatDate, getFileIcon, calculateTimeRemaining } from '@/lib/utils'
 import { Download, Trash2 } from 'lucide-react'
+import { CountdownTimer } from './CountdownTimer'
 
 interface FileItemProps {
   file: FileInfo
   onDelete: (fileId: string) => void
+  onExpired?: (fileId: string) => void
 }
 
-export function FileItem({ file, onDelete }: FileItemProps) {
+export function FileItem({ file, onDelete, onExpired }: FileItemProps) {
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isExpired, setIsExpired] = useState(false)
+  
+  const handleExpired = () => {
+    setIsExpired(true)
+    onExpired?.(file.id)
+  }
 
   const handleDownload = () => {
     const link = document.createElement('a')
@@ -40,9 +48,9 @@ export function FileItem({ file, onDelete }: FileItemProps) {
   }
 
   return (
-    <div className="grid grid-cols-12 gap-4 p-4 hover:bg-muted/50 transition-colors">
+    <div className={`grid grid-cols-12 gap-4 p-4 hover:bg-muted/50 transition-colors ${isExpired ? 'opacity-60' : ''}`}>
       {/* 文件名 */}
-      <div className="col-span-5 flex items-center space-x-3 min-w-0">
+      <div className="col-span-4 flex items-center space-x-3 min-w-0">
         <span className="text-2xl flex-shrink-0">
           {getFileIcon(file.name)}
         </span>
@@ -57,17 +65,28 @@ export function FileItem({ file, onDelete }: FileItemProps) {
       </div>
 
       {/* 文件大小 */}
-      <div className="col-span-2 flex items-center">
+      <div className="col-span-1 flex items-center">
         <span className="text-sm text-muted-foreground">
           {formatFileSize(file.size)}
         </span>
       </div>
 
+      {/* 倒计时 */}
+      <div className="col-span-2 flex items-center">
+        <CountdownTimer 
+          expiresAt={file.expiresAt} 
+          onExpired={handleExpired}
+        />
+      </div>
+
       {/* 上传时间 */}
       <div className="col-span-3 flex items-center">
-        <span className="text-sm text-muted-foreground">
-          {formatDate(new Date(file.uploadedAt))}
-        </span>
+        <div className="text-sm text-muted-foreground">
+          <div>{formatDate(new Date(file.uploadedAt))}</div>
+          <div className="text-xs">
+            到期：{formatDate(file.expiresAt)}
+          </div>
+        </div>
       </div>
 
       {/* 操作按钮 */}
@@ -76,8 +95,9 @@ export function FileItem({ file, onDelete }: FileItemProps) {
           variant="ghost"
           size="sm"
           onClick={handleDownload}
+          disabled={isExpired}
           className="h-8 w-8 p-0"
-          title="下载文件"
+          title={isExpired ? '文件已过期' : '下载文件'}
         >
           <Download className="h-4 w-4" />
         </Button>

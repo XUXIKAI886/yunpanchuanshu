@@ -65,6 +65,9 @@ export function FileUploader({ onUpload, uploads, isUploading }: FileUploaderPro
               <p className="text-sm text-muted-foreground">
                 选择文件后将自动开始上传
               </p>
+              <p className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded inline-block">
+                ⏰ 文件将在24小时后自动删除
+              </p>
             </div>
             <input
               type="file"

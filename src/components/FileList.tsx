@@ -115,7 +115,7 @@ export function FileList({
             {/* 表头 */}
             <div className="border-b bg-muted/30">
               <div className="grid grid-cols-12 gap-4 p-4 text-sm font-medium text-muted-foreground">
-                <div className="col-span-5 flex items-center space-x-2">
+                <div className="col-span-4 flex items-center space-x-2">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -126,7 +126,7 @@ export function FileList({
                     <SortIcon field="name" />
                   </Button>
                 </div>
-                <div className="col-span-2 flex items-center space-x-2">
+                <div className="col-span-1 flex items-center space-x-2">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -137,6 +137,7 @@ export function FileList({
                     <SortIcon field="size" />
                   </Button>
                 </div>
+                <div className="col-span-2 text-left">剩余时间</div>
                 <div className="col-span-3 flex items-center space-x-2">
                   <Button
                     variant="ghost"

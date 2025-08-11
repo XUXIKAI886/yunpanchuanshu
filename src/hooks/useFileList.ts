@@ -7,12 +7,13 @@ export function useFileList(spaceId: string) {
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<FileListFilter>({})
 
-  const fetchFiles = useCallback(async () => {
+  const fetchFiles = useCallback(async (withCleanup = false) => {
     setIsLoading(true)
     setError(null)
     
     try {
-      const response = await fetch(`/api/files?spaceId=${spaceId}`)
+      const url = `/api/files?spaceId=${spaceId}${withCleanup ? '&cleanup=true' : ''}`
+      const response = await fetch(url)
       
       if (!response.ok) {
         throw new Error('获取文件列表失败')
@@ -20,6 +21,10 @@ export function useFileList(spaceId: string) {
       
       const data = await response.json()
       setFiles(data.files || [])
+      
+      if (data.cleanupResult && data.cleanupResult.deletedCount > 0) {
+        console.log(`已自动清理 ${data.cleanupResult.deletedCount} 个过期文件`)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '获取文件列表失败')
     } finally {
@@ -72,7 +77,15 @@ export function useFileList(spaceId: string) {
   })
 
   useEffect(() => {
-    fetchFiles()
+    // 初始加载时进行清理
+    fetchFiles(true)
+    
+    // 设置定期清理，每10分钟检查一次
+    const cleanupInterval = setInterval(() => {
+      fetchFiles(true)
+    }, 10 * 60 * 1000) // 10分钟
+
+    return () => clearInterval(cleanupInterval)
   }, [fetchFiles])
 
   return {
@@ -81,7 +94,7 @@ export function useFileList(spaceId: string) {
     error,
     filter,
     setFilter,
-    refetch: fetchFiles,
+    refetch: () => fetchFiles(),
     deleteFile
   }
 }

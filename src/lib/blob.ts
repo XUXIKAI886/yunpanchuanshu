@@ -1,5 +1,6 @@
 import { put, del, list, head } from '@vercel/blob'
 import { FileInfo } from './types'
+import { getExpiryDate } from './utils'
 
 export class BlobService {
   private getSpacePath(spaceId: string): string {
@@ -12,6 +13,9 @@ export class BlobService {
     const filePath = `${spacePath}/${fileName}`
 
     try {
+      const now = new Date()
+      const expiresAt = getExpiryDate()
+      
       const { url, downloadUrl } = await put(filePath, file, {
         access: 'public',
         addRandomSuffix: false,
@@ -22,7 +26,8 @@ export class BlobService {
         name: fileName,
         size: file.size,
         type: file.type,
-        uploadedAt: new Date(),
+        uploadedAt: now,
+        expiresAt,
         downloadUrl,
         spaceId,
       }
@@ -45,12 +50,16 @@ export class BlobService {
           const fileName = blob.pathname.split('/').pop() || ''
           const fileInfo = await head(blob.url)
           
+          // 所有文件都使用上传时间+24小时作为过期时间
+          const expiresAt = new Date(blob.uploadedAt.getTime() + 24 * 60 * 60 * 1000)
+          
           files.push({
             id: blob.url,
             name: fileName,
             size: blob.size,
             type: fileInfo.contentType || 'application/octet-stream',
             uploadedAt: new Date(blob.uploadedAt),
+            expiresAt,
             downloadUrl: blob.downloadUrl,
             spaceId,
           })
@@ -104,6 +113,66 @@ export class BlobService {
       )
     } catch (error) {
       throw new Error(`清空空间失败: ${error instanceof Error ? error.message : '未知错误'}`)
+    }
+  }
+
+  async cleanExpiredFiles(spaceId?: string): Promise<{ deletedCount: number; deletedFiles: string[] }> {
+    try {
+      let files: FileInfo[]
+      
+      if (spaceId) {
+        files = await this.listFiles(spaceId)
+      } else {
+        // 获取所有空间的文件
+        const { blobs } = await list({
+          prefix: 'spaces/',
+        })
+        
+        files = []
+        for (const blob of blobs) {
+          try {
+            const fileName = blob.pathname.split('/').pop() || ''
+            const fileInfo = await head(blob.url)
+            const pathParts = blob.pathname.split('/')
+            const extractedSpaceId = pathParts.length > 1 ? pathParts[1] : 'unknown'
+            
+            const expiresAt = new Date(blob.uploadedAt.getTime() + 24 * 60 * 60 * 1000)
+            
+            files.push({
+              id: blob.url,
+              name: fileName,
+              size: blob.size,
+              type: fileInfo.contentType || 'application/octet-stream',
+              uploadedAt: new Date(blob.uploadedAt),
+              expiresAt,
+              downloadUrl: blob.downloadUrl,
+              spaceId: extractedSpaceId,
+            })
+          } catch (error) {
+            console.warn(`无法获取文件信息: ${blob.pathname}`, error)
+          }
+        }
+      }
+
+      const now = new Date()
+      const expiredFiles = files.filter(file => file.expiresAt.getTime() < now.getTime())
+      
+      const deletedFiles: string[] = []
+      for (const file of expiredFiles) {
+        try {
+          await this.deleteFile(file.id)
+          deletedFiles.push(file.name)
+        } catch (error) {
+          console.warn(`删除过期文件失败: ${file.name}`, error)
+        }
+      }
+
+      return {
+        deletedCount: deletedFiles.length,
+        deletedFiles
+      }
+    } catch (error) {
+      throw new Error(`清理过期文件失败: ${error instanceof Error ? error.message : '未知错误'}`)
     }
   }
 }

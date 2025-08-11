@@ -89,3 +89,40 @@ export function generateUniqueFileName(originalName: string, existingNames: stri
   
   return fileName
 }
+
+export function calculateTimeRemaining(expiresAt: Date): { 
+  timeRemaining: string; 
+  isExpired: boolean;
+  totalMinutes: number;
+} {
+  const now = new Date()
+  const expiry = new Date(expiresAt)
+  const diffMs = expiry.getTime() - now.getTime()
+  
+  if (diffMs <= 0) {
+    return { timeRemaining: '已过期', isExpired: true, totalMinutes: 0 }
+  }
+  
+  const totalMinutes = Math.floor(diffMs / (1000 * 60))
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  
+  if (hours > 0) {
+    return { 
+      timeRemaining: `${hours}小时${minutes}分钟`, 
+      isExpired: false,
+      totalMinutes 
+    }
+  } else {
+    return { 
+      timeRemaining: `${minutes}分钟`, 
+      isExpired: false,
+      totalMinutes 
+    }
+  }
+}
+
+export function getExpiryDate(): Date {
+  const now = new Date()
+  return new Date(now.getTime() + 24 * 60 * 60 * 1000) // 24小时后
+}

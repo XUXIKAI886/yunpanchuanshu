@@ -4,8 +4,11 @@ export interface FileInfo {
   size: number
   type: string
   uploadedAt: Date
+  expiresAt: Date
   downloadUrl: string
   spaceId: string
+  isExpired?: boolean
+  timeRemaining?: string
 }
 
 export interface SpaceInfo {

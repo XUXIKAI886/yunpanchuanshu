@@ -5,6 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('spaceId')
+    const cleanup = searchParams.get('cleanup') === 'true'
 
     if (!spaceId) {
       return NextResponse.json(
@@ -13,13 +14,24 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // 如果请求清理，先清理过期文件
+    let cleanupResult
+    if (cleanup) {
+      try {
+        cleanupResult = await blobService.cleanExpiredFiles(spaceId)
+      } catch (error) {
+        console.warn('清理过期文件时出错:', error)
+      }
+    }
+
     const files = await blobService.listFiles(spaceId)
     const spaceStats = await blobService.getSpaceStats(spaceId)
 
     return NextResponse.json({
       success: true,
       files,
-      spaceStats
+      spaceStats,
+      cleanupResult
     })
   } catch (error) {
     console.error('获取文件列表失败:', error)
