@@ -160,6 +160,10 @@ export function FileList({
                   key={file.id}
                   file={file}
                   onDelete={onDeleteFile}
+                  onExpired={() => {
+                    // 文件过期时可以选择自动刷新列表
+                    console.log(`文件已过期: ${file.name}`)
+                  }}
                 />
               ))}
             </div>

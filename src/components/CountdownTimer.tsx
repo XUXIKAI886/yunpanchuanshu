@@ -10,11 +10,13 @@ interface CountdownTimerProps {
 }
 
 export function CountdownTimer({ expiresAt, onExpired }: CountdownTimerProps) {
-  const [timeInfo, setTimeInfo] = useState(() => calculateTimeRemaining(expiresAt))
+  const [timeInfo, setTimeInfo] = useState(() => calculateTimeRemaining(new Date(expiresAt)))
 
   useEffect(() => {
+    const expireDate = new Date(expiresAt)
+    
     const updateTimer = () => {
-      const newTimeInfo = calculateTimeRemaining(expiresAt)
+      const newTimeInfo = calculateTimeRemaining(expireDate)
       setTimeInfo(newTimeInfo)
       
       if (newTimeInfo.isExpired && onExpired) {
@@ -25,26 +27,20 @@ export function CountdownTimer({ expiresAt, onExpired }: CountdownTimerProps) {
     // 立即更新一次
     updateTimer()
 
-    // 根据剩余时间设置更新频率
-    let interval: NodeJS.Timeout
-    
-    if (timeInfo.totalMinutes > 60) {
-      // 超过1小时，每分钟更新一次
-      interval = setInterval(updateTimer, 60 * 1000)
-    } else if (timeInfo.totalMinutes > 5) {
-      // 5分钟到1小时，每30秒更新一次
-      interval = setInterval(updateTimer, 30 * 1000)
-    } else if (!timeInfo.isExpired) {
-      // 最后5分钟，每10秒更新一次
-      interval = setInterval(updateTimer, 10 * 1000)
+    // 设置定时更新，根据情况选择频率
+    const currentTimeInfo = calculateTimeRemaining(expireDate)
+    let intervalTime = 60 * 1000 // 默认1分钟
+
+    if (currentTimeInfo.totalMinutes <= 5 && !currentTimeInfo.isExpired) {
+      intervalTime = 10 * 1000 // 最后5分钟，每10秒
+    } else if (currentTimeInfo.totalMinutes <= 60) {
+      intervalTime = 30 * 1000 // 1小时内，每30秒
     }
 
-    return () => {
-      if (interval) {
-        clearInterval(interval)
-      }
-    }
-  }, [expiresAt, timeInfo.totalMinutes, timeInfo.isExpired, onExpired])
+    const interval = setInterval(updateTimer, intervalTime)
+
+    return () => clearInterval(interval)
+  }, [expiresAt, onExpired])
 
   const getColorClass = () => {
     if (timeInfo.isExpired) {

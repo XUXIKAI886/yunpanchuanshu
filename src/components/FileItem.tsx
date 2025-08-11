@@ -84,7 +84,7 @@ export function FileItem({ file, onDelete, onExpired }: FileItemProps) {
         <div className="text-sm text-muted-foreground">
           <div>{formatDate(new Date(file.uploadedAt))}</div>
           <div className="text-xs">
-            到期：{formatDate(file.expiresAt)}
+            到期：{formatDate(new Date(file.expiresAt))}
           </div>
         </div>
       </div>
