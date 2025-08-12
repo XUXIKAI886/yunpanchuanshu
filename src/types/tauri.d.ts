@@ -2,25 +2,20 @@
 declare global {
   interface Window {
     __TAURI__?: {
-      dialog: {
-        save: (options?: {
-          defaultPath?: string
-          filters?: Array<{
-            name: string
-            extensions: string[]
-          }>
-        }) => Promise<string | null>
+      core: {
+        invoke: (command: string, args?: any) => Promise<any>
       }
-      fs: {
-        writeBinaryFile: (path: string, data: Uint8Array) => Promise<void>
-        writeTextFile: (path: string, data: string) => Promise<void>
-        readBinaryFile: (path: string) => Promise<Uint8Array>
-        readTextFile: (path: string) => Promise<string>
-      }
-      shell: {
-        open: (url: string) => Promise<void>
-      }
-      invoke: (command: string, args?: any) => Promise<any>
+      app?: any
+      dpi?: any
+      event?: any
+      image?: any
+      menu?: any
+      mocks?: any
+      path?: any
+      tray?: any
+      webview?: any
+      webviewWindow?: any
+      window?: any
       [key: string]: any
     }
   }
