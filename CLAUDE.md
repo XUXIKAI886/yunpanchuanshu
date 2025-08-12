@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a lightweight cloud storage system (轻量级云盘项目) built with Next.js and Vercel Blob. It provides simple file sharing services where users can access independent file spaces through URLs without registration or login.
+This is a lightweight cloud storage system (轻量级云盘项目) built with Next.js and Cloudflare R2. It provides simple file sharing services where users can access independent file spaces through URLs without registration or login.
 
 ## Development Commands
 
@@ -33,7 +33,7 @@ This is a lightweight cloud storage system (轻量级云盘项目) built with Ne
 - File deduplication through unique filename generation
 
 ### Core Services
-- `BlobService` (src/lib/blob.ts): Manages all Vercel Blob operations including upload, list, delete, and cleanup
+- `R2Service` (src/lib/r2.ts): Manages all Cloudflare R2 operations including upload, list, delete, and cleanup
 - Automatic expired file cleanup functionality
 - Space isolation with independent statistics per spaceId
 
