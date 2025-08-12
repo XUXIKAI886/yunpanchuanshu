@@ -131,7 +131,41 @@ export function getExpiryDate(): Date {
  * 检测是否在 Tauri 环境中运行
  */
 export function isTauriEnv(): boolean {
-  return typeof window !== 'undefined' && window.__TAURI__ !== undefined
+  return typeof window !== 'undefined' && 
+         window.__TAURI__ !== undefined &&
+         window.__TAURI__.dialog !== undefined &&
+         window.__TAURI__.fs !== undefined
+}
+
+/**
+ * 获取 Tauri 环境信息（调试用）
+ */
+export function getTauriInfo(): {
+  hasTauri: boolean
+  hasDialog: boolean
+  hasFs: boolean
+  availableApis: string[]
+} {
+  if (typeof window === 'undefined') {
+    return {
+      hasTauri: false,
+      hasDialog: false,
+      hasFs: false,
+      availableApis: []
+    }
+  }
+
+  const hasTauri = !!window.__TAURI__
+  const hasDialog = !!(window.__TAURI__?.dialog)
+  const hasFs = !!(window.__TAURI__?.fs)
+  const availableApis = hasTauri ? Object.keys(window.__TAURI__ || {}) : []
+
+  return {
+    hasTauri,
+    hasDialog,
+    hasFs,
+    availableApis
+  }
 }
 
 /**
@@ -174,12 +208,28 @@ function downloadFileInBrowser(url: string, fileName: string): boolean {
  */
 async function downloadFileInTauri(url: string, fileName: string): Promise<boolean> {
   try {
-    // 动态导入 Tauri API，使用函数形式避免类型检查问题
-    const dialogModule = await Function('return import("@tauri-apps/plugin-dialog")')()
-    const fsModule = await Function('return import("@tauri-apps/plugin-fs")')()
+    // 详细检查 Tauri API 是否可用
+    if (typeof window === 'undefined') {
+      throw new Error('Window 对象不可用')
+    }
     
-    const { save } = dialogModule
-    const { writeFile } = fsModule
+    if (!window.__TAURI__) {
+      throw new Error('__TAURI__ 对象不存在')
+    }
+    
+    if (!window.__TAURI__.dialog || !window.__TAURI__.dialog.save) {
+      throw new Error('Tauri dialog API 不可用')
+    }
+    
+    if (!window.__TAURI__.fs || !window.__TAURI__.fs.writeBinaryFile) {
+      throw new Error('Tauri fs API 不可用')
+    }
+
+    console.log('Tauri APIs 可用，开始下载流程...')
+
+    // 使用 Tauri API
+    const save = window.__TAURI__.dialog.save
+    const writeBinaryFile = window.__TAURI__.fs.writeBinaryFile
     
     // 获取文件扩展名用于文件类型过滤
     const extension = fileName.split('.').pop()?.toLowerCase()
@@ -188,6 +238,8 @@ async function downloadFileInTauri(url: string, fileName: string): Promise<boole
       extensions: [extension]
     }] : []
 
+    console.log('显示保存对话框...')
+    
     // 显示保存对话框
     const filePath = await save({
       defaultPath: fileName,
@@ -195,9 +247,12 @@ async function downloadFileInTauri(url: string, fileName: string): Promise<boole
     })
 
     if (!filePath) {
-      // 用户取消了保存
+      console.log('用户取消了保存')
       return false
     }
+
+    console.log('用户选择保存路径:', filePath)
+    console.log('开始下载文件内容...')
 
     // 下载文件内容
     const response = await fetch(url)
@@ -209,12 +264,17 @@ async function downloadFileInTauri(url: string, fileName: string): Promise<boole
     const arrayBuffer = await blob.arrayBuffer()
     const uint8Array = new Uint8Array(arrayBuffer)
 
+    console.log('文件下载完成，大小:', uint8Array.length, '字节')
+    console.log('开始写入文件...')
+
     // 写入文件
-    await writeFile(filePath, uint8Array)
+    await writeBinaryFile(filePath, uint8Array)
     
+    console.log('文件保存成功!')
     return true
   } catch (error) {
     console.error('Tauri 下载失败:', error)
+    console.log('回退到浏览器下载模式...')
     // 如果 Tauri API 不可用，回退到浏览器下载
     return downloadFileInBrowser(url, fileName)
   }

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { FileInfo } from '@/lib/types'
-import { formatFileSize, formatDate, getFileIcon, calculateTimeRemaining } from '@/lib/utils'
+import { formatFileSize, formatDate, getFileIcon, calculateTimeRemaining, getTauriInfo } from '@/lib/utils'
 import { Download, Trash2 } from 'lucide-react'
 import { CountdownTimer } from './CountdownTimer'
 import { useFileDownload } from '@/hooks/useFileDownload'
@@ -26,6 +26,10 @@ export function FileItem({ file, onDelete, onExpired }: FileItemProps) {
 
   const handleDownload = async () => {
     if (isDownloading(file.id) || isExpired) return
+    
+    // 输出调试信息
+    const tauriInfo = getTauriInfo()
+    console.log('Tauri 环境信息:', tauriInfo)
     
     try {
       const success = await downloadFileById(file.id, file.name, file.downloadUrl)
