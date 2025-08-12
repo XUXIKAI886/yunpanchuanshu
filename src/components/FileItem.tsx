@@ -6,6 +6,7 @@ import { FileInfo } from '@/lib/types'
 import { formatFileSize, formatDate, getFileIcon, calculateTimeRemaining } from '@/lib/utils'
 import { Download, Trash2 } from 'lucide-react'
 import { CountdownTimer } from './CountdownTimer'
+import { useFileDownload } from '@/hooks/useFileDownload'
 
 interface FileItemProps {
   file: FileInfo
@@ -16,20 +17,25 @@ interface FileItemProps {
 export function FileItem({ file, onDelete, onExpired }: FileItemProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const [isExpired, setIsExpired] = useState(false)
+  const { downloadFileById, isDownloading, isTauri } = useFileDownload()
   
   const handleExpired = () => {
     setIsExpired(true)
     onExpired?.(file.id)
   }
 
-  const handleDownload = () => {
-    const link = document.createElement('a')
-    link.href = file.downloadUrl
-    link.download = file.name
-    link.target = '_blank'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+  const handleDownload = async () => {
+    if (isDownloading(file.id) || isExpired) return
+    
+    try {
+      const success = await downloadFileById(file.id, file.name, file.downloadUrl)
+      if (!success) {
+        // 可以在这里添加错误提示
+        console.error('文件下载失败')
+      }
+    } catch (error) {
+      console.error('下载过程中发生错误:', error)
+    }
   }
 
   const handleDelete = async () => {
@@ -95,11 +101,11 @@ export function FileItem({ file, onDelete, onExpired }: FileItemProps) {
           variant="ghost"
           size="sm"
           onClick={handleDownload}
-          disabled={isExpired}
+          disabled={isExpired || isDownloading(file.id)}
           className="h-8 w-8 p-0"
-          title={isExpired ? '文件已过期' : '下载文件'}
+          title={isExpired ? '文件已过期' : isDownloading(file.id) ? `下载中...${isTauri ? '(Tauri模式)' : ''}` : `下载文件${isTauri ? '(Tauri模式)' : ''}`}
         >
-          <Download className="h-4 w-4" />
+          <Download className={`h-4 w-4 ${isDownloading(file.id) ? 'animate-spin' : ''}`} />
         </Button>
         
         <Button
