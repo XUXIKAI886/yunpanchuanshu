@@ -22,14 +22,35 @@ export function FileItem({ file, onDelete, onExpired }: FileItemProps) {
     onExpired?.(file.id)
   }
 
-  const handleDownload = () => {
-    const link = document.createElement('a')
-    link.href = file.downloadUrl
-    link.download = file.name
-    link.target = '_blank'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+  const handleDownload = async () => {
+    try {
+      // 使用 fetch 获取文件内容，然后强制下载
+      const response = await fetch(file.downloadUrl)
+      if (!response.ok) {
+        throw new Error('下载失败')
+      }
+      
+      // 获取文件 blob
+      const blob = await response.blob()
+      
+      // 创建下载链接
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = file.name
+      link.style.display = 'none'
+      
+      // 添加到页面并触发下载
+      document.body.appendChild(link)
+      link.click()
+      
+      // 清理
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('下载失败:', error)
+      alert(`下载失败: ${error instanceof Error ? error.message : '未知错误'}`)
+    }
   }
 
   const handleDelete = async () => {

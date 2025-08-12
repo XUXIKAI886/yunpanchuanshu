@@ -25,7 +25,17 @@ export async function GET(request: NextRequest) {
     }
 
     const files = await blobService.listFiles(spaceId)
-    const spaceStats = await blobService.getSpaceStats(spaceId)
+    
+    // 直接从文件列表计算统计信息，避免重复调用
+    const totalSize = files.reduce((sum, file) => sum + file.size, 0)
+    const lastModified = files.length > 0 ? files[0].uploadedAt : new Date()
+    
+    const spaceStats = {
+      id: spaceId,
+      totalFiles: files.length,
+      totalSize,
+      lastModified,
+    }
 
     return NextResponse.json({
       success: true,
