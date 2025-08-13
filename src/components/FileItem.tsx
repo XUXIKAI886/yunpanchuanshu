@@ -24,19 +24,12 @@ export function FileItem({ file, onDelete, onExpired }: FileItemProps) {
 
   const handleDownload = async () => {
     try {
-      // 使用 fetch 获取文件内容，然后强制下载
-      const response = await fetch(file.downloadUrl)
-      if (!response.ok) {
-        throw new Error('下载失败')
-      }
+      // 直接通过API下载文件
+      const downloadUrl = `/api/download?fileId=${encodeURIComponent(file.id)}`
       
-      // 获取文件 blob
-      const blob = await response.blob()
-      
-      // 创建下载链接
-      const url = window.URL.createObjectURL(blob)
+      // 创建下载链接并触发下载
       const link = document.createElement('a')
-      link.href = url
+      link.href = downloadUrl
       link.download = file.name
       link.style.display = 'none'
       
@@ -46,7 +39,6 @@ export function FileItem({ file, onDelete, onExpired }: FileItemProps) {
       
       // 清理
       document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
     } catch (error) {
       console.error('下载失败:', error)
       alert(`下载失败: ${error instanceof Error ? error.message : '未知错误'}`)

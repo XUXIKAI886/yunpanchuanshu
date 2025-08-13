@@ -11,7 +11,7 @@ import { FileInfo } from './types'
 import { getExpiryDate } from './utils'
 
 export class R2Service {
-  private client: S3Client
+  public client: S3Client
   private bucketName: string
   private publicDomain?: string
 
@@ -304,9 +304,11 @@ export class R2Service {
   // 生成预签名的下载URL（用于私有文件访问）
   async generatePresignedDownloadUrl(fileKey: string, expiresIn: number = 3600): Promise<string> {
     try {
+      const fileName = fileKey.split('/').pop() || 'download'
       const command = new GetObjectCommand({
         Bucket: this.bucketName,
         Key: fileKey,
+        ResponseContentDisposition: `attachment; filename="${encodeURIComponent(fileName)}"`,
       })
       
       return await getSignedUrl(this.client, command, { expiresIn })

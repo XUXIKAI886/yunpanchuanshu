@@ -14,6 +14,20 @@ This is a lightweight cloud storage system (轻量级云盘项目) built with Ne
 - `npm run lint` - Run ESLint code quality checks
 - `npm run typecheck` - Run TypeScript type checking
 
+## Environment Setup
+
+Copy environment variables from example:
+```bash
+cp .env.example .env.local
+```
+
+Required environment variables for Cloudflare R2:
+- `R2_ENDPOINT` - Cloudflare R2 endpoint URL
+- `R2_ACCESS_KEY_ID` - R2 Access Key ID  
+- `R2_SECRET_ACCESS_KEY` - R2 Secret Access Key
+- `R2_BUCKET_NAME` - R2 bucket name
+- `R2_PUBLIC_DOMAIN` - (Optional) Custom domain for public file access
+
 ## Technology Stack
 
 - **Framework**: Next.js 14 (App Router)
@@ -60,7 +74,8 @@ The upload API enforces a whitelist of allowed file types including:
 
 ### State Management
 - `useFileUpload` hook: Manages upload progress and status
-- `useFileList` hook: Manages file list data and operations
+- `useFileList` hook: Manages file list data and operations  
+- `useFileDownload` hook: Handles file download logic for different environments
 - React state for UI interactions, no external state management
 
 ### Key Features
@@ -79,7 +94,15 @@ The upload API enforces a whitelist of allowed file types including:
 - `src/app/space/[spaceId]/page.tsx` - Main file space interface
 - `src/components/FileItem.tsx` - File item component with download logic
 - `next.config.js` - Next.js configuration
-- Environment variables: `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`
+- Environment variables: `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_DOMAIN` (optional)
+
+## Storage Migration Notes
+The project has migrated from Vercel Blob to Cloudflare R2. The `src/lib/blob.ts` file serves as a compatibility layer, re-exporting R2Service as BlobService to maintain backward compatibility with existing code.
+
+## Deployment Configuration
+- Vercel deployment configuration in `vercel.json` with API timeout settings
+- API routes have different timeout limits: upload (60s), files (45s), delete (30s), cleanup (60s)
+- Next.js config includes AWS SDK external packages for server components
 
 ## Testing
 No test framework is currently configured. When adding tests, check the existing codebase structure and add appropriate test configuration.
